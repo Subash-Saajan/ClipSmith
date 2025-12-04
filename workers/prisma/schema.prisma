@@ -1,0 +1,54 @@
+generator client {
+  provider             = "prisma-client-py"
+  interface            = "sync"
+  recursive_type_depth = 5
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Job represents a clip generation request
+model Job {
+  id           String    @id @default(uuid())
+  youtubeUrl   String
+  prompt       String
+  status       JobStatus @default(PENDING)
+  errorMessage String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Relations
+  clips Clip[]
+
+  @@map("jobs")
+}
+
+// Clip represents a generated video clip
+model Clip {
+  id        String   @id @default(uuid())
+  jobId     String
+  title     String?
+  startTime Float    // Start time in seconds
+  endTime   Float    // End time in seconds
+  duration  Float    // Duration in seconds
+  url       String?  // S3/R2 URL after upload
+  createdAt DateTime @default(now())
+
+  // Relations
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@map("clips")
+}
+
+enum JobStatus {
+  PENDING
+  DOWNLOADING
+  TRANSCRIBING
+  ANALYZING
+  CLIPPING
+  UPLOADING
+  COMPLETED
+  FAILED
+}

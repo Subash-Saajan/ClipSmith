@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Environment files
+.env
+.env.local
+*.env
+
+# Build outputs
+dist/
+build/
+.next/
+
+# Downloads and generated files
+downloads/
+clips/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Python
+*.egg-info/
+.eggs/
+
+# Prisma
+prisma/*.db
+
+# Cache
+.cache/
+*.cache
