@@ -2,6 +2,12 @@ import json
 import redis
 import ssl
 import os
+import sys
+
+# Fix Windows console encoding for Unicode
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
 
 # Set FFmpeg path for pydub before importing it
 from pydub import AudioSegment
@@ -12,7 +18,7 @@ AudioSegment.ffprobe = FFMPEG_PATH.replace("ffmpeg.exe", "ffprobe.exe")
 from config import REDIS_URL, CLIP_QUEUE
 from downloader import download_video
 from transcriber import transcribe_video
-from analyzer import analyze_transcript
+from analyzer import analyze_transcript, analyze_with_vision
 from clipper import create_clips
 from generator import generate_video
 from database import update_job_status, save_clips, update_job_progress
@@ -28,31 +34,40 @@ def get_redis_client():
 
 
 def process_clip_job(job_id: str, youtube_url: str, prompt: str):
-    """Process a CLIP job - extract clips from long video."""
+    """Process a CLIP job - extract clips from long video using audio + vision analysis."""
     try:
-        # Step 1: Download video (0-25%)
+        # Step 1: Download video (0-20%)
         update_job_status(job_id, "DOWNLOADING")
         update_job_progress(job_id, 0)
         print("[Step 1/4] Downloading video...")
         download_result = download_video(youtube_url, job_id)
         print(f"[Step 1/4] Downloaded: {download_result['title']}")
         print(f"[Step 1/4] Duration: {download_result['duration']}s")
-        update_job_progress(job_id, 25)
+        update_job_progress(job_id, 20)
 
-        # Step 2: Transcribe video (25-50%)
+        # Step 2: Transcribe video (20-40%)
         update_job_status(job_id, "TRANSCRIBING")
-        update_job_progress(job_id, 30)
-        print("\n[Step 2/4] Transcribing video...")
+        update_job_progress(job_id, 25)
+        print("\n[Step 2/4] Transcribing audio...")
         transcript_result = transcribe_video(download_result["file_path"])
         print(f"[Step 2/4] Language: {transcript_result['language']}")
         print(f"[Step 2/4] Segments: {len(transcript_result['segments'])}")
-        update_job_progress(job_id, 50)
+        update_job_progress(job_id, 40)
 
-        # Step 3: Analyze with LLM (50-75%)
+        # Step 3: Analyze with Vision + LLM (40-75%)
         update_job_status(job_id, "ANALYZING")
-        update_job_progress(job_id, 55)
-        print("\n[Step 3/4] Analyzing with LLM...")
-        clip_suggestions = analyze_transcript(transcript_result, prompt)
+        update_job_progress(job_id, 45)
+        print("\n[Step 3/4] Analyzing video (audio + vision)...")
+        print("[Step 3/4] This uses LLaVA to 'see' the video frames...")
+
+        # Use vision-enabled analysis (extracts frames and analyzes with LLaVA)
+        clip_suggestions = analyze_with_vision(
+            video_path=download_result["file_path"],
+            transcript=transcript_result,
+            prompt=prompt,
+            num_frames=8  # Analyze 8 frames spread across video
+        )
+
         print(f"[Step 3/4] Found {len(clip_suggestions)} clips:")
         for i, clip in enumerate(clip_suggestions, 1):
             print(f"  {i}. {clip['title']} ({clip['start']:.1f}s - {clip['end']:.1f}s)")

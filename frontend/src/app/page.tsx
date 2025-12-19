@@ -34,7 +34,6 @@ export default function Home() {
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [jobType, setJobType] = useState<"CLIP" | "GENERATE">("CLIP");
 
   // Fetch jobs on load and periodically
   // Poll faster (3s) when jobs are processing, slower (10s) otherwise
@@ -133,10 +132,7 @@ export default function Home() {
     return "pending";
   };
 
-  const isProcessing = (status: string) => {
-    return !["COMPLETED", "FAILED", "PENDING"].includes(status);
-  };
-
+  
   return (
     <div className="min-h-screen bg-zinc-950 text-white p-8">
       <div className="max-w-4xl mx-auto">
@@ -170,9 +166,7 @@ export default function Home() {
                   Prompt (optional)
                 </label>
                 <Textarea
-                  placeholder={jobType === "CLIP"
-                    ? "Find the funniest moments, key insights, viral hooks..."
-                    : "Make it funny, change background to mountains, add dramatic effect..."}
+                  placeholder="Find the funniest moments, key insights, viral hooks..."
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   className="bg-zinc-800 border-zinc-700 text-white"
@@ -180,33 +174,19 @@ export default function Home() {
                 />
               </div>
 
-              {/* Two action buttons */}
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  type="button"
-                  onClick={() => handleSubmit("CLIP")}
-                  disabled={loading || !youtubeUrl}
-                  className="bg-blue-600 hover:bg-blue-700 flex items-center justify-center gap-2"
-                >
-                  <span>✂️</span>
-                  {loading ? "Processing..." : "Clip"}
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => handleSubmit("GENERATE")}
-                  disabled={loading || !youtubeUrl}
-                  className="bg-purple-600 hover:bg-purple-700 flex items-center justify-center gap-2"
-                >
-                  <span>🎬</span>
-                  {loading ? "Processing..." : "Generate"}
-                </Button>
-              </div>
-
-              {/* Explanation text */}
-              <div className="grid grid-cols-2 gap-3 text-xs text-zinc-500">
-                <p className="text-center">Extract best clips from long video</p>
-                <p className="text-center">AI generate new video from reference</p>
-              </div>
+              {/* Single Clip button */}
+              <Button
+                type="button"
+                onClick={() => handleSubmit("CLIP")}
+                disabled={loading || !youtubeUrl}
+                className="w-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center gap-2"
+              >
+                <span>✂️</span>
+                {loading ? "Processing..." : "Extract Viral Clips"}
+              </Button>
+              <p className="text-xs text-zinc-500 text-center">
+                AI analyzes video content to find the most engaging moments
+              </p>
             </div>
           </CardContent>
         </Card>
